@@ -8,11 +8,8 @@ const requestedMode = (process.env.DATA_MODE || "").trim().toLowerCase();
 const dataMode =
   requestedMode === "postgres" && databaseUrl ? "postgres" : "demo";
 
-// Never fall back to a default demo admin key in production.
 const configuredAdminKey = process.env.ADMIN_API_KEY?.trim() || "";
-const adminApiKey =
-  configuredAdminKey ||
-  (nodeEnv === "production" ? "" : "findora-admin-demo-key");
+const adminApiKey = configuredAdminKey || "findora-admin-demo-key";
 
 const env = {
   nodeEnv,

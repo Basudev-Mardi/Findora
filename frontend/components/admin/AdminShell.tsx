@@ -116,18 +116,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   className="h-11 w-full rounded-xl border border-[#E7EBE8] bg-[#F7F8F5] pl-10 pr-3.5 text-sm text-[#202B32] focus:border-[#1F6B50] focus:bg-white focus:outline-none"
                 />
               </div>
-              {process.env.NODE_ENV !== "production" && (
-                <p className="mt-2 text-[11px] text-[#7B858B]">
-                  Local demo key:{" "}
-                  <button
-                    type="button"
-                    onClick={() => setKeyInput("findora-admin-demo-key")}
-                    className="rounded bg-[#F7F8F5] px-1.5 py-0.5 font-mono font-semibold text-[#1F6B50] underline decoration-[#1F6B50]/40 underline-offset-2 hover:text-[#142D3B]"
-                  >
-                    findora-admin-demo-key
-                  </button>
-                </p>
-              )}
+              <p className="mt-2 text-[11px] text-[#7B858B]">
+                Demo admin password:{" "}
+                <button
+                  type="button"
+                  onClick={() => setKeyInput("findora-admin-demo-key")}
+                  className="rounded bg-[#F7F8F5] px-1.5 py-0.5 font-mono font-semibold text-[#1F6B50] underline decoration-[#1F6B50]/40 underline-offset-2 hover:text-[#142D3B]"
+                >
+                  findora-admin-demo-key
+                </button>
+              </p>
             </div>
 
             <button
