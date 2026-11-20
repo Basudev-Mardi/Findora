@@ -10,6 +10,7 @@ async function getHealth(_req, res, next) {
       service: "findora-backend",
       mode: database.mode,
       databaseConnected: database.connected,
+      ...(database.errorCode ? { databaseErrorCode: database.errorCode } : {}),
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
