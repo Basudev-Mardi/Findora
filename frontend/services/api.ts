@@ -1,4 +1,4 @@
-import { env } from "@/config/env";
+import { getApiBaseUrl } from "@/config/env";
 import type { ApiResponse, HealthStatus } from "@/types/api";
 
 export class ApiClientError extends Error {
@@ -21,7 +21,11 @@ async function request<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
-  const url = `${env.apiUrl}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+  const baseUrl = getApiBaseUrl();
+  const normalizedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  const url = baseUrl.startsWith("http")
+    ? new URL(`${baseUrl}${normalizedEndpoint}`).toString()
+    : `${baseUrl}${normalizedEndpoint}`;
 
   const { headers: customHeaders, ...restOptions } = options ?? {};
 

@@ -11,6 +11,13 @@ const allowedOrigins = env.corsOrigin
   .map((o) => o.trim())
   .filter(Boolean);
 
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`);
+}
+
 app.use(
   cors({
     origin(origin, callback) {

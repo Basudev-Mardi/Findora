@@ -14,6 +14,15 @@ function safeEqual(a, b) {
  * to authorized administrators via the x-admin-key header.
  */
 function requireAdmin(req, _res, next) {
+  if (!env.adminApiKey) {
+    return next(
+      new AppError(
+        "Administrator access is disabled until ADMIN_API_KEY is configured.",
+        503
+      )
+    );
+  }
+
   const providedKey = req.headers["x-admin-key"];
 
   if (!providedKey || typeof providedKey !== "string" || !providedKey.trim()) {

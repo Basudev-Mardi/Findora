@@ -7,6 +7,9 @@ if (env.dataMode === "postgres" && env.databaseUrl) {
   pool = new Pool({
     connectionString: env.databaseUrl,
     ssl: { rejectUnauthorized: false },
+    max: 5,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
   });
 }
 
