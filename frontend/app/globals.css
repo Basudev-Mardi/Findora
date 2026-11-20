@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+:root {
+  --color-navy: #142D3B;
+  --color-forest: #1F6B50;
+  --color-lime: #C9FD04;
+  --color-bg: #F7F8F5;
+  --color-surface: #FFFFFF;
+  --color-charcoal: #202B32;
+  --color-muted: #7B858B;
+  --color-border: #E7EBE8;
+}
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-charcoal);
+  --color-navy: var(--color-navy);
+  --color-forest: var(--color-forest);
+  --color-lime: var(--color-lime);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --font-sans: var(--font-plus-jakarta-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-charcoal);
+  font-family: var(--font-sans);
+}
