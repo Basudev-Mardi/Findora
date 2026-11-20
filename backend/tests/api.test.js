@@ -105,7 +105,7 @@ function requestApp({ method = "GET", url = "/", body, rawBody, headers = {} }) 
 
 describe("Findora REST API", () => {
   beforeEach(() => {
-    setDatabaseTestOverride(null);
+    setDatabaseTestOverride({ isDemoMode: true });
     resetDemoStore();
   });
 

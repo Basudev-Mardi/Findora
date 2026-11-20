@@ -232,7 +232,7 @@ const foundItemsModel = {
         data.privateVerificationDetails ?? null,
         data.additionalNotes ?? null,
         data.imageUrl ?? null,
-        data.status || "active",
+        data.status || "available",
         submissionHash,
         now,
         now,

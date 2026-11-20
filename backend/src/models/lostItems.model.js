@@ -226,7 +226,7 @@ const lostItemsModel = {
         data.publicDescription,
         data.privateIdentifyingDetails ?? null,
         data.imageUrl ?? null,
-        data.status || "active",
+        data.status || "available",
         submissionHash,
         now,
         now,

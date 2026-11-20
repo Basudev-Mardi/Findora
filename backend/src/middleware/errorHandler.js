@@ -20,10 +20,31 @@ function errorHandler(err, _req, res, _next) {
       );
     }
     if (err.code === "23503") {
-      return sendError(res, "Referenced record does not exist.", 400);
+      const location = err.constraint || err.column || err.table;
+      return sendError(
+        res,
+        location
+          ? `Referenced record does not exist (${location}).`
+          : "Referenced record does not exist.",
+        400
+      );
+    }
+    if (err.code === "23502") {
+      const field = err.column || "required field";
+      return sendError(res, `Missing required value for '${field}'.`, 400);
+    }
+    if (err.code === "22001") {
+      const field = err.column || err.table || "input field";
+      return sendError(res, `Input value is too long for '${field}'.`, 400);
     }
     if (err.code === "22P02" || err.code === "23514") {
-      return sendError(res, "Invalid input data format.", 400);
+      const parts = [
+        err.table ? `table: ${err.table}` : null,
+        err.column ? `field: ${err.column}` : null,
+        err.constraint ? `constraint: ${err.constraint}` : null,
+      ].filter(Boolean);
+      const locationHint = parts.length > 0 ? ` (${parts.join(", ")})` : "";
+      return sendError(res, `Invalid input data format${locationHint}.`, 400);
     }
     if (
       err.code === "ECONNREFUSED" ||

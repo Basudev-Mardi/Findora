@@ -1,12 +1,14 @@
 const fs = require("fs");
 const path = require("path");
-const { Pool } = require("pg");
+const { Pool, Client } = require("pg");
+const { attachDatabasePool } = require("@vercel/functions");
 const { env } = require("./env");
 
 let pool = null;
 let schemaInitPromise = null;
 
 if (env.dataMode === "postgres" && env.databaseUrl) {
+  // Pooled connection string (DATABASE_URL with -pooler) for serverless & web queries
   pool = new Pool({
     connectionString: env.databaseUrl,
     ssl: { rejectUnauthorized: false },
@@ -14,6 +16,13 @@ if (env.dataMode === "postgres" && env.databaseUrl) {
     idleTimeoutMillis: 10000,
     connectionTimeoutMillis: 10000,
   });
+
+  // Attach pool lifecycle to Vercel Fluid compute for safe connection cleanup
+  try {
+    attachDatabasePool(pool);
+  } catch {
+    // No-op outside Vercel Fluid compute runtime
+  }
 }
 
 // Optional test override for simulating PostgreSQL mode/errors cleanly in unit tests.
@@ -31,8 +40,8 @@ function isDemoMode() {
 }
 
 /**
- * Ensures PostgreSQL tables exist on first serverless cold start so a fresh
- * Neon database works out of the box without manual SQL setup.
+ * Ensures PostgreSQL tables exist on first startup using the direct (unpooled)
+ * Neon connection string per Neon best practices for DDL/migrations.
  */
 async function ensurePostgresSchema() {
   if (!pool || testOverride) return;
@@ -42,7 +51,16 @@ async function ensurePostgresSchema() {
         path.join(__dirname, "../db/schema.sql"),
         "utf8"
       );
-      await pool.query(schemaSql);
+      const directClient = new Client({
+        connectionString: env.databaseUrlUnpooled || env.databaseUrl,
+        ssl: { rejectUnauthorized: false },
+      });
+      await directClient.connect();
+      try {
+        await directClient.query(schemaSql);
+      } finally {
+        await directClient.end();
+      }
     })().catch((err) => {
       schemaInitPromise = null;
       throw err;
@@ -83,6 +101,7 @@ module.exports = {
   pool,
   query,
   isDemoMode,
+  ensurePostgresSchema,
   checkDatabaseConnection,
   setDatabaseTestOverride,
 };
