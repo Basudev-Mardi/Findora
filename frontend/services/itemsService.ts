@@ -14,15 +14,18 @@ import type {
 } from "@/types/item";
 
 const CATEGORY_FALLBACK_IMAGES: Record<string, string> = {
-  Electronics: "/images/airpods.webp",
-  Bags: "/images/bag.webp",
-  Personal: "/images/bottle.webp",
-  "ID & Cards": "/images/id.webp",
-  Keys: "/images/keys.webp",
-  Accessories: "/images/glasses.webp",
-  Stationery: "/images/notebook.webp",
-  Wallets: "/images/watch.webp",
+  Electronics: "/images/default electronics.jpeg",
+  Wallets: "/images/default wallets.jpeg",
+  Bags: "/images/default bag.jpg",
+  "ID & Cards": "/images/default id card.jpg",
+  Keys: "/images/default keys.jpeg",
+  Accessories: "/images/default accessories.jpeg",
+  Personal: "/images/default personal.jpg",
+  Stationery: "/images/default starionary.jpg",
+  Other: "/images/default others .jpg",
 };
+
+const DEFAULT_FALLBACK_IMAGE = "/images/default others .jpg";
 
 function formatDisplayDate(isoDate: string): string {
   const parsed = new Date(`${isoDate}T12:00:00Z`);
@@ -49,7 +52,9 @@ function normalizeLifecycleState(status: BackendItemStatus): ItemLifecycleState 
 
 function mapLostItem(raw: BackendLostItem): LostFoundItem {
   const image =
-    raw.imageUrl || CATEGORY_FALLBACK_IMAGES[raw.category] || "/images/campus.webp";
+    raw.imageUrl ||
+    CATEGORY_FALLBACK_IMAGES[raw.category] ||
+    DEFAULT_FALLBACK_IMAGE;
   return {
     id: raw.id,
     userId: raw.userId,
@@ -70,7 +75,9 @@ function mapLostItem(raw: BackendLostItem): LostFoundItem {
 
 function mapFoundItem(raw: BackendFoundItem): LostFoundItem {
   const image =
-    raw.imageUrl || CATEGORY_FALLBACK_IMAGES[raw.category] || "/images/campus.webp";
+    raw.imageUrl ||
+    CATEGORY_FALLBACK_IMAGES[raw.category] ||
+    DEFAULT_FALLBACK_IMAGE;
   return {
     id: raw.id,
     userId: raw.userId,
