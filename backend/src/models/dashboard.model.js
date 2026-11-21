@@ -90,68 +90,64 @@ const dashboardModel = {
       };
     }
 
-    const [lostRes, foundRes, claimsRes, usersRes, catRes, zoneRes, latestRes] =
-      await Promise.all([
-        query(
-          `SELECT COUNT(*)::int AS total,
-                  COUNT(*) FILTER (WHERE status = 'recovered')::int AS recovered,
-                  COUNT(*) FILTER (WHERE status NOT IN ('recovered', 'archived'))::int AS active
-           FROM lost_items`
-        ),
-        query(
-          `SELECT COUNT(*)::int AS total,
-                  COUNT(*) FILTER (WHERE status = 'recovered')::int AS recovered,
-                  COUNT(*) FILTER (WHERE status NOT IN ('recovered', 'archived'))::int AS active
-           FROM found_items`
-        ),
-        query(
-          `SELECT COUNT(*) FILTER (WHERE status IN ('claim_requested', 'under_verification'))::int AS pending,
-                  COUNT(*) FILTER (WHERE status = 'approved')::int AS approved,
-                  COUNT(*) FILTER (WHERE status = 'recovered')::int AS resolved
-           FROM claims`
-        ),
-        query(`SELECT COUNT(*)::int AS total FROM users`),
-        query(
-          `SELECT category AS name, COUNT(*)::int AS count
-           FROM (
-             SELECT category FROM lost_items
-             UNION ALL
-             SELECT category FROM found_items
-           ) combined
-           GROUP BY category
-           ORDER BY count DESC`
-        ),
-        query(
-          `SELECT campus_zone AS name, COUNT(*)::int AS count
-           FROM (
-             SELECT campus_zone FROM lost_items
-             UNION ALL
-             SELECT campus_zone FROM found_items
-           ) combined
-           GROUP BY campus_zone
-           ORDER BY count DESC`
-        ),
-        query(
-          `SELECT id, title, campus_zone, status, created_at, updated_at
-           FROM (
-             SELECT id, title, campus_zone, status, created_at, updated_at FROM found_items
-             UNION ALL
-             SELECT id, title, campus_zone, status, created_at, updated_at FROM lost_items
-           ) all_items
-           WHERE status IN ('recovered', 'approved', 'under_verification', 'claim_requested')
-           ORDER BY updated_at DESC
-           LIMIT 1`
-        ),
-      ]);
+    const [summaryRes, catRes, zoneRes] = await Promise.all([
+      query(`
+        SELECT
+          (SELECT COUNT(*)::int FROM lost_items) AS total_lost,
+          (SELECT COUNT(*)::int FROM lost_items WHERE status = 'recovered') AS lost_recovered,
+          (SELECT COUNT(*)::int FROM lost_items WHERE status NOT IN ('recovered', 'archived')) AS lost_active,
+          (SELECT COUNT(*)::int FROM found_items) AS total_found,
+          (SELECT COUNT(*)::int FROM found_items WHERE status = 'recovered') AS found_recovered,
+          (SELECT COUNT(*)::int FROM found_items WHERE status NOT IN ('recovered', 'archived')) AS found_active,
+          (SELECT COUNT(*)::int FROM claims WHERE status IN ('claim_requested', 'under_verification')) AS pending_claims,
+          (SELECT COUNT(*)::int FROM claims WHERE status = 'approved') AS approved_claims,
+          (SELECT COUNT(*)::int FROM claims WHERE status = 'recovered') AS resolved_claims,
+          (SELECT COUNT(*)::int FROM users) AS total_users,
+          (
+            SELECT row_to_json(latest)
+            FROM (
+              SELECT id, title, campus_zone, status, created_at, updated_at
+              FROM (
+                SELECT id, title, campus_zone, status, created_at, updated_at FROM found_items
+                UNION ALL
+                SELECT id, title, campus_zone, status, created_at, updated_at FROM lost_items
+              ) all_items
+              WHERE status IN ('recovered', 'approved', 'under_verification', 'claim_requested')
+              ORDER BY updated_at DESC
+              LIMIT 1
+            ) latest
+          ) AS latest_reunited
+      `),
+      query(
+        `SELECT category AS name, COUNT(*)::int AS count
+         FROM (
+           SELECT category FROM lost_items
+           UNION ALL
+           SELECT category FROM found_items
+         ) combined
+         GROUP BY category
+         ORDER BY count DESC`
+      ),
+      query(
+        `SELECT campus_zone AS name, COUNT(*)::int AS count
+         FROM (
+           SELECT campus_zone FROM lost_items
+           UNION ALL
+           SELECT campus_zone FROM found_items
+         ) combined
+         GROUP BY campus_zone
+         ORDER BY count DESC`
+      ),
+    ]);
 
-    const totalLostItems = lostRes.rows[0].total;
-    const totalFoundItems = foundRes.rows[0].total;
+    const summary = summaryRes.rows[0];
+    const totalLostItems = summary.total_lost;
+    const totalFoundItems = summary.total_found;
     const itemsReported = totalLostItems + totalFoundItems;
-    const itemsRecovered =
-      lostRes.rows[0].recovered + foundRes.rows[0].recovered;
-    const activeListings = lostRes.rows[0].active + foundRes.rows[0].active;
+    const itemsRecovered = summary.lost_recovered + summary.found_recovered;
+    const activeListings = summary.lost_active + summary.found_active;
 
-    const latestRow = latestRes.rows[0];
+    const latestRow = summary.latest_reunited;
     const latestReunited = latestRow
       ? {
           id: latestRow.id,
@@ -176,10 +172,10 @@ const dashboardModel = {
       totalFoundItems,
       itemsRecovered,
       activeListings,
-      pendingClaims: claimsRes.rows[0].pending,
-      approvedClaims: claimsRes.rows[0].approved,
-      resolvedClaims: claimsRes.rows[0].resolved,
-      activeCommunityMembers: usersRes.rows[0].total,
+      pendingClaims: summary.pending_claims,
+      approvedClaims: summary.approved_claims,
+      resolvedClaims: summary.resolved_claims,
+      activeCommunityMembers: summary.total_users,
       recoveryRate:
         itemsReported > 0
           ? Number(((itemsRecovered / itemsReported) * 100).toFixed(1))

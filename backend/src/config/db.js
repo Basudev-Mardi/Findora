@@ -8,7 +8,6 @@ let pool = null;
 let schemaInitPromise = null;
 
 if (env.dataMode === "postgres" && env.databaseUrl) {
-  // Pooled connection string (DATABASE_URL with -pooler) for serverless & web queries
   pool = new Pool({
     connectionString: env.databaseUrl,
     ssl: { rejectUnauthorized: false },
@@ -17,7 +16,6 @@ if (env.dataMode === "postgres" && env.databaseUrl) {
     connectionTimeoutMillis: 10000,
   });
 
-  // Attach pool lifecycle to Vercel Fluid compute for safe connection cleanup
   try {
     attachDatabasePool(pool);
   } catch {
@@ -25,7 +23,6 @@ if (env.dataMode === "postgres" && env.databaseUrl) {
   }
 }
 
-// Optional test override for simulating PostgreSQL mode/errors cleanly in unit tests.
 let testOverride = null;
 
 function setDatabaseTestOverride(override) {
@@ -40,8 +37,9 @@ function isDemoMode() {
 }
 
 /**
- * Ensures PostgreSQL tables exist on first startup using the direct (unpooled)
- * Neon connection string per Neon best practices for DDL/migrations.
+ * Lazily initializes PostgreSQL tables over the direct (unpooled) connection
+ * only if a query reports missing tables (SQLSTATE 42P01), avoiding an extra
+ * connection round-trip on every serverless cold start.
  */
 async function ensurePostgresSchema() {
   if (!pool || testOverride) return;
@@ -76,8 +74,16 @@ async function query(text, params = []) {
   if (!pool) {
     throw new Error("Database pool is not initialized (running in demo mode).");
   }
-  await ensurePostgresSchema();
-  return pool.query(text, params);
+
+  try {
+    return await pool.query(text, params);
+  } catch (error) {
+    if (error && error.code === "42P01") {
+      await ensurePostgresSchema();
+      return pool.query(text, params);
+    }
+    throw error;
+  }
 }
 
 async function checkDatabaseConnection() {

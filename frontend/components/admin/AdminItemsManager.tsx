@@ -80,6 +80,11 @@ export function AdminItemsManager({
       }
     }
 
+    if (!query.trim()) {
+      void load();
+      return () => controller.abort();
+    }
+
     const timer = setTimeout(() => void load(), 180);
     return () => {
       clearTimeout(timer);

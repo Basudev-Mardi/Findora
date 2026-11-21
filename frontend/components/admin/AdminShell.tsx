@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   PackageSearch,
+  QrCode,
   Search,
   Settings,
   ShieldAlert,
@@ -29,6 +30,7 @@ const SIDEBAR_ITEMS = [
   { label: "Found Items", href: "/admin/found-items", icon: PackageSearch },
   { label: "Claim Requests", href: "/admin/claims", icon: ClipboardCheck },
   { label: "Recovered Items", href: "/admin/recovered", icon: CheckCircle2 },
+  { label: "Share QR", href: "/admin/qr", icon: QrCode },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
