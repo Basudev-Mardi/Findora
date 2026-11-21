@@ -12,6 +12,20 @@ function buildBreakdown(items, key) {
     .sort((a, b) => b.count - a.count);
 }
 
+function computeReturnHours(createdAt, updatedAt) {
+  const start = new Date(createdAt).getTime();
+  const end = new Date(updatedAt).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 1;
+  return Math.max(1, Math.round((end - start) / (1000 * 60 * 60)));
+}
+
+const CLAIM_ACTIVITY_STATUSES = [
+  "recovered",
+  "approved",
+  "under_verification",
+  "claim_requested",
+];
+
 const dashboardModel = {
   async getStats() {
     if (isDemoMode()) {
@@ -37,6 +51,24 @@ const dashboardModel = {
         (claim) => claim.status === "recovered"
       ).length;
 
+      const latestActivityItem = allItems
+        .filter((item) => CLAIM_ACTIVITY_STATUSES.includes(item.status))
+        .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)))[0];
+
+      const latestReunited = latestActivityItem
+        ? {
+            id: latestActivityItem.id,
+            title: latestActivityItem.title,
+            campusZone: latestActivityItem.campusZone,
+            status: latestActivityItem.status,
+            returnedInHours: computeReturnHours(
+              latestActivityItem.createdAt,
+              latestActivityItem.updatedAt
+            ),
+            updatedAt: latestActivityItem.updatedAt,
+          }
+        : null;
+
       return {
         mode: "demo",
         itemsReported,
@@ -52,12 +84,13 @@ const dashboardModel = {
           itemsReported > 0
             ? Number(((itemsRecovered / itemsReported) * 100).toFixed(1))
             : 0,
+        latestReunited,
         categoryBreakdown: buildBreakdown(allItems, "category"),
         zoneBreakdown: buildBreakdown(allItems, "campusZone"),
       };
     }
 
-    const [lostRes, foundRes, claimsRes, usersRes, catRes, zoneRes] =
+    const [lostRes, foundRes, claimsRes, usersRes, catRes, zoneRes, latestRes] =
       await Promise.all([
         query(
           `SELECT COUNT(*)::int AS total,
@@ -98,6 +131,17 @@ const dashboardModel = {
            GROUP BY campus_zone
            ORDER BY count DESC`
         ),
+        query(
+          `SELECT id, title, campus_zone, status, created_at, updated_at
+           FROM (
+             SELECT id, title, campus_zone, status, created_at, updated_at FROM found_items
+             UNION ALL
+             SELECT id, title, campus_zone, status, created_at, updated_at FROM lost_items
+           ) all_items
+           WHERE status IN ('recovered', 'approved', 'under_verification', 'claim_requested')
+           ORDER BY updated_at DESC
+           LIMIT 1`
+        ),
       ]);
 
     const totalLostItems = lostRes.rows[0].total;
@@ -106,6 +150,24 @@ const dashboardModel = {
     const itemsRecovered =
       lostRes.rows[0].recovered + foundRes.rows[0].recovered;
     const activeListings = lostRes.rows[0].active + foundRes.rows[0].active;
+
+    const latestRow = latestRes.rows[0];
+    const latestReunited = latestRow
+      ? {
+          id: latestRow.id,
+          title: latestRow.title,
+          campusZone: latestRow.campus_zone,
+          status: latestRow.status,
+          returnedInHours: computeReturnHours(
+            latestRow.created_at,
+            latestRow.updated_at
+          ),
+          updatedAt:
+            latestRow.updated_at instanceof Date
+              ? latestRow.updated_at.toISOString()
+              : String(latestRow.updated_at),
+        }
+      : null;
 
     return {
       mode: "postgres",
@@ -122,6 +184,7 @@ const dashboardModel = {
         itemsReported > 0
           ? Number(((itemsRecovered / itemsReported) * 100).toFixed(1))
           : 0,
+      latestReunited,
       categoryBreakdown: catRes.rows,
       zoneBreakdown: zoneRes.rows,
     };

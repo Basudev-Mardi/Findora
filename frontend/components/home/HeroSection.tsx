@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, MapPin, Search } from "lucide-react";
+import { ArrowRight, Search } from "lucide-react";
+import { HeroLiveBadge } from "./HeroLiveBadge";
 
 export function HeroSection() {
   return (
@@ -70,40 +71,8 @@ export function HeroSection() {
                 </div>
               </div>
 
-              {/* Right Subtle Floating Campus Activity Overlay */}
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:flex-col lg:items-end">
-                <div className="w-full max-w-xs rounded-2xl border border-white/20 bg-[#142D3B]/75 p-4 text-white backdrop-blur-md">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1F6B50] text-[#C9FD04]">
-                      <CheckCircle2 className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold text-white">
-                        Recently Reunited
-                      </p>
-                      <p className="truncate text-xs text-white/75">
-                        Dorm Keys &middot; Returned in 4 hrs
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full max-w-xs rounded-2xl border border-white/20 bg-white/95 p-4 text-[#142D3B] shadow-lg backdrop-blur-md">
-                  <div className="flex items-center justify-between text-xs font-semibold text-[#1F6B50]">
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" />
-                      Active Campus Zones
-                    </span>
-                    <span className="rounded-full bg-[#1F6B50]/10 px-2 py-0.5 text-[11px]">
-                      Live
-                    </span>
-                  </div>
-                  <p className="mt-1.5 text-xs leading-relaxed text-[#7B858B]">
-                    Science Library, North Hall, Student Union, and 21 other
-                    campus locations monitored daily.
-                  </p>
-                </div>
-              </div>
+              {/* Right Live Campus Activity Overlay */}
+              <HeroLiveBadge />
             </div>
           </div>
         </div>

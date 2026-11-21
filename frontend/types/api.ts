@@ -109,6 +109,15 @@ export interface DashboardBreakdownEntry {
   count: number;
 }
 
+export interface LatestReunitedItem {
+  id: string;
+  title: string;
+  campusZone: string;
+  status: BackendItemStatus;
+  returnedInHours: number;
+  updatedAt: string;
+}
+
 export interface DashboardStats {
   mode: "demo" | "postgres";
   itemsReported: number;
@@ -121,6 +130,7 @@ export interface DashboardStats {
   resolvedClaims: number;
   activeCommunityMembers: number;
   recoveryRate: number;
+  latestReunited: LatestReunitedItem | null;
   categoryBreakdown: DashboardBreakdownEntry[];
   zoneBreakdown: DashboardBreakdownEntry[];
 }
