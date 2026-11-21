@@ -62,10 +62,20 @@ export function ItemDetailActions({
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const storedUserId =
+      typeof window !== "undefined"
+        ? window.localStorage.getItem("findora_active_demo_user_id") || "usr-demo-1"
+        : undefined;
+    const claimantUserId =
+      storedUserId && storedUserId !== "usr-demo-empty"
+        ? storedUserId
+        : undefined;
+
     try {
       const created = await claimsService.create({
         itemType: status,
         itemId,
+        claimantUserId,
         claimantName: claimantName.trim(),
         claimantEmail: claimantEmail.trim() || undefined,
         approximateDateLost,

@@ -10,6 +10,7 @@ import type { ItemStatus } from "@/types/item";
 export interface SubmitClaimPayload {
   itemType: ItemStatus;
   itemId: string;
+  claimantUserId?: string;
   claimantName: string;
   claimantEmail?: string;
   approximateDateLost: string;

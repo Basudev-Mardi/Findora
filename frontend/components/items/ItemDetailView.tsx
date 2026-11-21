@@ -13,10 +13,11 @@ import {
   MapPin,
   RefreshCw,
   ShieldCheck,
+  Sparkles,
   Tag,
 } from "lucide-react";
 import { claimsService } from "@/services/claimsService";
-import { itemsService } from "@/services/itemsService";
+import { itemsService, type PotentialMatch } from "@/services/itemsService";
 import type { PublicClaimSummary } from "@/types/api";
 import type { LostFoundItem } from "@/types/item";
 import { CatalogItemCard } from "./CatalogItemCard";
@@ -31,6 +32,7 @@ interface ItemDetailViewProps {
 export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
   const [item, setItem] = useState<LostFoundItem | null>(null);
   const [itemClaims, setItemClaims] = useState<PublicClaimSummary[]>([]);
+  const [potentialMatches, setPotentialMatches] = useState<PotentialMatch[]>([]);
   const [relatedItems, setRelatedItems] = useState<LostFoundItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [notFoundState, setNotFoundState] = useState(false);
@@ -60,14 +62,19 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
         setNotFoundState(false);
         setErrorMessage(null);
 
-        const [claimsResult, relatedResult] = await Promise.allSettled([
-          claimsService.listPublic({ itemId: fetched.id }, controller.signal),
-          itemsService.getRelated(fetched, 4, controller.signal),
-        ]);
+        const [claimsResult, matchesResult, relatedResult] =
+          await Promise.allSettled([
+            claimsService.listPublic({ itemId: fetched.id }, controller.signal),
+            itemsService.getPotentialMatches(fetched, 4, controller.signal),
+            itemsService.getRelated(fetched, 4, controller.signal),
+          ]);
 
         if (!controller.signal.aborted) {
           setItemClaims(
             claimsResult.status === "fulfilled" ? claimsResult.value : []
+          );
+          setPotentialMatches(
+            matchesResult.status === "fulfilled" ? matchesResult.value : []
           );
           setRelatedItems(
             relatedResult.status === "fulfilled" ? relatedResult.value : []
@@ -323,6 +330,54 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
           </div>
         </div>
       </div>
+
+      {/* Potential Opposite-Type Matches */}
+      {potentialMatches.length > 0 && (
+        <section className="mt-14 border-t border-[#E7EBE8] pt-10">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#1F6B50]">
+                <Sparkles className="h-3.5 w-3.5" />
+                Smart Campus Matching
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#142D3B]">
+                Potential {isFound ? "Lost" : "Found"} Matches
+              </h2>
+              <p className="mt-1 text-xs text-[#7B858B] sm:text-sm">
+                Opposite-type campus listings matched by category, location,
+                date proximity, and keywords.
+              </p>
+            </div>
+            <Link
+              href={isFound ? "/lost" : "/found"}
+              className="text-sm font-semibold text-[#1F6B50] hover:text-[#142D3B]"
+            >
+              Browse all {isFound ? "lost" : "found"} &rarr;
+            </Link>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {potentialMatches.map((match) => (
+              <div key={match.item.id} className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-1.5 px-1">
+                  <span className="rounded-full bg-[#142D3B] px-2.5 py-0.5 text-[11px] font-bold text-[#C9FD04]">
+                    {match.matchScore}% Match
+                  </span>
+                  {match.matchReasons.slice(0, 2).map((reason) => (
+                    <span
+                      key={reason}
+                      className="rounded-full border border-[#E7EBE8] bg-white px-2 py-0.5 text-[10px] font-medium text-[#202B32]"
+                    >
+                      {reason}
+                    </span>
+                  ))}
+                </div>
+                <CatalogItemCard item={match.item} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Related Items */}
       {relatedItems.length > 0 && (

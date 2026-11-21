@@ -86,7 +86,8 @@ ADMIN_API_KEY=findora-admin-demo-key
 **Optional Neon PostgreSQL Mode:**
 ```env
 DATA_MODE=postgres
-DATABASE_URL=postgresql://user:password@your-neon-host/findora?sslmode=require
+DATABASE_URL=postgresql://user:password@your-neon-pooler-host/findora?sslmode=require
+DATABASE_URL_UNPOOLED=postgresql://user:password@your-neon-direct-host/findora?sslmode=require
 ```
 Apply schema and seed data to Neon PostgreSQL:
 ```bash
@@ -156,6 +157,7 @@ Base URL: `http://localhost:5000/api`
 | `POST` | `/claims` | Public | Submit ownership claim (`claim_requested`, never auto-approved) |
 | `GET` | `/claims/admin/review` | Admin (`x-admin-key`) | Full claims with private verification answers and confidential item clues |
 | `PATCH` | `/claims/:id/status` | Admin (`x-admin-key`) | Transition claim (`under_verification`, `approved`, `rejected`, `recovered` with `handoverConfirmed: true`) |
+| `GET` | `/matches/:itemType/:id` | Public | Find potential opposite-type (`lost` ↔ `found`) matches scored by category, campus zone, date proximity, and keywords |
 | `GET` | `/dashboard/stats` | Public | Live campus statistics and zone/category breakdowns |
 
 ---
@@ -166,6 +168,7 @@ Base URL: `http://localhost:5000/api`
 2. Enter the demo administrator key configured in `backend/.env`:
    - Default local demo key: `findora-admin-demo-key`
 3. All privileged endpoints verify the `x-admin-key` header on the Express backend (`401`/`403` if missing or invalid).
+4. Visit `/admin/qr` (**Share QR** in the Admin sidebar) to generate, copy, print, or download PNG QR posters for campus bulletin boards.
 
 ---
 

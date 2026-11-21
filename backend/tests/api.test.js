@@ -769,4 +769,35 @@ describe("Findora REST API", () => {
       assert.ok(lostId);
     });
   });
+
+  describe("Potential Lost/Found Matching (/api/matches)", () => {
+    it("matches lost AirPods with found Wireless Earbuds without exposing private clues", async () => {
+      const res = await requestApp({
+        method: "GET",
+        url: "/api/matches/lost/lost-airpods",
+      });
+      assert.equal(res.status, 200);
+      assert.equal(res.body.success, true);
+      assert.ok(res.body.data.total >= 1);
+      const top = res.body.data.matches[0];
+      assert.equal(top.item.id, "found-earbuds");
+      assert.ok(top.matchScore >= 70);
+      assert.ok(Array.isArray(top.matchReasons) && top.matchReasons.length > 0);
+      assert.equal(top.item.privateVerificationDetails, undefined);
+    });
+
+    it("returns 400 on invalid itemType and 404 on missing item", async () => {
+      const badType = await requestApp({
+        method: "GET",
+        url: "/api/matches/invalid/lost-airpods",
+      });
+      assert.equal(badType.status, 400);
+
+      const missing = await requestApp({
+        method: "GET",
+        url: "/api/matches/lost/does-not-exist",
+      });
+      assert.equal(missing.status, 404);
+    });
+  });
 });

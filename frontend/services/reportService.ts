@@ -7,6 +7,14 @@ import type {
 } from "@/types/report";
 import { validateReportForm } from "@/utils/reportValidation";
 
+const DEMO_USER_STORAGE_KEY = "findora_active_demo_user_id";
+
+function getActiveDemoUserId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  const stored = window.localStorage.getItem(DEMO_USER_STORAGE_KEY) || "usr-demo-1";
+  return stored === "usr-demo-empty" ? undefined : stored;
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -41,9 +49,12 @@ export const reportService = {
       }
     }
 
+    const userId = getActiveDemoUserId();
+
     try {
       if (type === "found") {
         const res = await apiClient.post<BackendFoundItem>("/found-items", {
+          userId,
           title: values.itemName.trim(),
           category: values.category.trim(),
           campusZone: values.campusZone.trim(),
@@ -67,6 +78,7 @@ export const reportService = {
       }
 
       const res = await apiClient.post<BackendLostItem>("/lost-items", {
+        userId,
         title: values.itemName.trim(),
         category: values.category.trim(),
         campusZone: values.campusZone.trim(),

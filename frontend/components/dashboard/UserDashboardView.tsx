@@ -21,6 +21,8 @@ import type { PublicClaimSummary } from "@/types/api";
 import type { LostFoundItem } from "@/types/item";
 import { StatusBadge } from "@/components/items/StatusBadge";
 
+const DEMO_USER_STORAGE_KEY = "findora_active_demo_user_id";
+
 const DEMO_PROFILES = [
   { id: "usr-demo-1", name: "Aarav Sharma", role: "Student (Demo)" },
   { id: "usr-demo-2", name: "Maya Lin", role: "Student (Demo)" },
@@ -28,7 +30,15 @@ const DEMO_PROFILES = [
 ];
 
 export function UserDashboardView() {
-  const [selectedUserId, setSelectedUserId] = useState(DEMO_PROFILES[0].id);
+  const [selectedUserId, setSelectedUserId] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem(DEMO_USER_STORAGE_KEY);
+      if (saved && DEMO_PROFILES.some((p) => p.id === saved)) {
+        return saved;
+      }
+    }
+    return DEMO_PROFILES[0].id;
+  });
   const [allLost, setAllLost] = useState<LostFoundItem[]>([]);
   const [allFound, setAllFound] = useState<LostFoundItem[]>([]);
   const [myClaims, setMyClaims] = useState<PublicClaimSummary[]>([]);
@@ -218,8 +228,12 @@ export function UserDashboardView() {
               id="demo-user-select"
               value={selectedUserId}
               onChange={(e) => {
+                const nextId = e.target.value;
+                if (typeof window !== "undefined") {
+                  window.localStorage.setItem(DEMO_USER_STORAGE_KEY, nextId);
+                }
                 setIsLoading(true);
-                setSelectedUserId(e.target.value);
+                setSelectedUserId(nextId);
               }}
               className="bg-transparent text-xs font-semibold text-[#142D3B] focus:outline-none"
             >

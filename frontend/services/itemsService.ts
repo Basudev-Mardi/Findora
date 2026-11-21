@@ -124,6 +124,23 @@ function buildFilterQuery(params: ItemFilterParams): string {
   return qs ? `?${qs}` : "";
 }
 
+export interface PotentialMatch {
+  item: LostFoundItem;
+  matchScore: number;
+  matchReasons: string[];
+}
+
+interface BackendMatchesResponse {
+  sourceId: string;
+  sourceType: ItemStatus;
+  matches: {
+    item: BackendLostItem | BackendFoundItem;
+    matchScore: number;
+    matchReasons: string[];
+  }[];
+  total: number;
+}
+
 export const itemsService = {
   async list(
     params: ItemFilterParams,
@@ -192,5 +209,24 @@ export const itemsService = {
       signal
     );
     return items.filter((candidate) => candidate.id !== item.id).slice(0, limit);
+  },
+
+  async getPotentialMatches(
+    item: LostFoundItem,
+    limit = 4,
+    signal?: AbortSignal
+  ): Promise<PotentialMatch[]> {
+    const res = await apiClient.get<BackendMatchesResponse>(
+      `/matches/${item.status}/${encodeURIComponent(item.id)}?limit=${limit}`,
+      { signal }
+    );
+    return res.data.matches.map((entry) => ({
+      item:
+        entry.item.itemType === "found"
+          ? mapFoundItem(entry.item)
+          : mapLostItem(entry.item),
+      matchScore: entry.matchScore,
+      matchReasons: entry.matchReasons,
+    }));
   },
 };
