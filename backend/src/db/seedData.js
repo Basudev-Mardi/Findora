@@ -43,7 +43,7 @@ function createSeedLostItems() {
       publicDescription:
         "Slim matte black bifold leather wallet last seen near the charging booths after lunch.",
       privateIdentifyingDetails: "Contains a green library punch card inside.",
-      imageUrl: "/images/watch.webp",
+      imageUrl: "/images/default wallets.jpeg",
       status: "available",
     },
     {

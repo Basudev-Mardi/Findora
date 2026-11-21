@@ -2,7 +2,10 @@ const crypto = require("crypto");
 const { isDemoMode, query } = require("../config/db");
 const { demoStore } = require("./demoStore");
 const { AppError } = require("../utils/AppError");
-const { computeSubmissionHash } = require("../utils/validators");
+const {
+  computeSubmissionHash,
+  getDefaultCategoryImage,
+} = require("../utils/validators");
 
 function toPublicLostItem(row) {
   return {
@@ -196,7 +199,7 @@ const lostItemsModel = {
         dateLost: data.dateLost,
         publicDescription: data.publicDescription,
         privateIdentifyingDetails: data.privateIdentifyingDetails ?? null,
-        imageUrl: data.imageUrl ?? null,
+        imageUrl: data.imageUrl || getDefaultCategoryImage(data.category),
         status: data.status || "available",
         submissionHash,
         createdAt: now,
@@ -225,7 +228,7 @@ const lostItemsModel = {
         data.dateLost,
         data.publicDescription,
         data.privateIdentifyingDetails ?? null,
-        data.imageUrl ?? null,
+        data.imageUrl || getDefaultCategoryImage(data.category),
         data.status || "available",
         submissionHash,
         now,

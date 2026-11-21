@@ -10,6 +10,23 @@ const ALLOWED_ITEM_STATUSES = [
   "archived",
 ];
 
+const DEFAULT_CATEGORY_IMAGES = {
+  electronics: "/images/default electronics.jpeg",
+  wallets: "/images/default wallets.jpeg",
+  bags: "/images/default bag.jpg",
+  "id & cards": "/images/default id card.jpg",
+  keys: "/images/default keys.jpeg",
+  accessories: "/images/default accessories.jpeg",
+  personal: "/images/default personal.jpg",
+  stationery: "/images/default starionary.jpg",
+  other: "/images/default others .jpg",
+};
+
+function getDefaultCategoryImage(category) {
+  const key = String(category || "").trim().toLowerCase();
+  return DEFAULT_CATEGORY_IMAGES[key] || "/images/default others .jpg";
+}
+
 const ALLOWED_CLAIM_STATUSES = [
   "claim_requested",
   "under_verification",
@@ -312,6 +329,7 @@ module.exports = {
   ALLOWED_ITEM_STATUSES,
   ALLOWED_CLAIM_STATUSES,
   ACTIVE_CLAIM_STATUSES,
+  getDefaultCategoryImage,
   sanitizeText,
   sanitizeOptionalText,
   computeSubmissionHash,

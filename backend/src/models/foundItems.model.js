@@ -2,7 +2,10 @@ const crypto = require("crypto");
 const { isDemoMode, query } = require("../config/db");
 const { demoStore } = require("./demoStore");
 const { AppError } = require("../utils/AppError");
-const { computeSubmissionHash } = require("../utils/validators");
+const {
+  computeSubmissionHash,
+  getDefaultCategoryImage,
+} = require("../utils/validators");
 
 function toPublicFoundItem(row) {
   return {
@@ -200,7 +203,7 @@ const foundItemsModel = {
         publicDescription: data.publicDescription,
         privateVerificationDetails: data.privateVerificationDetails ?? null,
         additionalNotes: data.additionalNotes ?? null,
-        imageUrl: data.imageUrl ?? null,
+        imageUrl: data.imageUrl || getDefaultCategoryImage(data.category),
         status: data.status || "available",
         submissionHash,
         createdAt: now,
@@ -231,7 +234,7 @@ const foundItemsModel = {
         data.publicDescription,
         data.privateVerificationDetails ?? null,
         data.additionalNotes ?? null,
-        data.imageUrl ?? null,
+        data.imageUrl || getDefaultCategoryImage(data.category),
         data.status || "available",
         submissionHash,
         now,
