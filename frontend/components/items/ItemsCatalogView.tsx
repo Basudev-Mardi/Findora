@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { itemsService } from "@/services/itemsService";
+import { readClientCache, writeClientCache } from "@/utils/clientCache";
 import { CAMPUS_ZONES, REPORT_CATEGORIES } from "@/utils/reportValidation";
 import type {
   DateRangeFilter,
@@ -70,8 +71,26 @@ export function ItemsCatalogView({
 
   useEffect(() => {
     const controller = new AbortController();
+    const isDefaultView =
+      !debouncedQuery.trim() &&
+      category === "all" &&
+      campusZone === "all" &&
+      dateRange === "all" &&
+      sortOrder === "newest";
+    const cacheKey = `findora_cache_catalog_${status}`;
 
     async function load() {
+      if (isDefaultView) {
+        const cached = readClientCache<LostFoundItem[]>(cacheKey);
+        if (cached) {
+          await Promise.resolve();
+          if (!controller.signal.aborted) {
+            setItems(cached);
+            setIsLoading(false);
+          }
+        }
+      }
+
       try {
         const result = await itemsService.list(
           {
@@ -87,6 +106,9 @@ export function ItemsCatalogView({
         if (!controller.signal.aborted) {
           setItems(result);
           setErrorMessage(null);
+          if (isDefaultView) {
+            writeClientCache(cacheKey, result);
+          }
         }
       } catch (error) {
         if (controller.signal.aborted) return;

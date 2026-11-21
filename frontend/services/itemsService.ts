@@ -118,6 +118,7 @@ function buildFilterQuery(params: ItemFilterParams): string {
   const dateFrom = computeDateFrom(params.dateRange);
   if (dateFrom) searchParams.set("dateFrom", dateFrom);
   if (params.sortOrder) searchParams.set("sort", params.sortOrder);
+  if (params.limit) searchParams.set("limit", String(params.limit));
 
   const qs = searchParams.toString();
   return qs ? `?${qs}` : "";

@@ -13,17 +13,23 @@ import {
 } from "lucide-react";
 import { dashboardService } from "@/services/dashboardService";
 import { itemsService } from "@/services/itemsService";
+import { readClientCache, writeClientCache } from "@/utils/clientCache";
 import type { DashboardStats } from "@/types/api";
 import type { LostFoundItem } from "@/types/item";
 import { ItemsShowcaseSection } from "./ItemsShowcaseSection";
 import { HowItWorksSection } from "./HowItWorksSection";
 import { ItemGridSkeleton } from "@/components/items/ItemGridSkeleton";
 
+const CACHE_KEYS = {
+  stats: "findora_cache_dashboard_stats",
+  lost: "findora_cache_home_lost",
+  found: "findora_cache_home_found",
+} as const;
+
 export function HomeLiveContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [lostItems, setLostItems] = useState<LostFoundItem[]>([]);
-  const [foundItems, setFoundItems] = useState<LostFoundItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [lostItems, setLostItems] = useState<LostFoundItem[] | null>(null);
+  const [foundItems, setFoundItems] = useState<LostFoundItem[] | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
@@ -31,42 +37,72 @@ export function HomeLiveContent() {
     const controller = new AbortController();
 
     async function load() {
-      try {
-        const [statsData, lostData, foundData] = await Promise.all([
-          dashboardService.getStats(controller.signal),
-          itemsService.list(
-            { status: "lost", sortOrder: "newest" },
-            controller.signal
-          ),
-          itemsService.list(
-            { status: "found", sortOrder: "newest" },
-            controller.signal
-          ),
-        ]);
+      // Hydrate immediately from last real backend snapshot on reload (0ms flash).
+      const cachedStats = readClientCache<DashboardStats>(CACHE_KEYS.stats);
+      const cachedLost = readClientCache<LostFoundItem[]>(CACHE_KEYS.lost);
+      const cachedFound = readClientCache<LostFoundItem[]>(CACHE_KEYS.found);
 
-        if (controller.signal.aborted) return;
+      if (cachedStats || cachedLost || cachedFound) {
+        await Promise.resolve();
+        if (!controller.signal.aborted) {
+          if (cachedStats) setStats(cachedStats);
+          if (cachedLost) setLostItems(cachedLost);
+          if (cachedFound) setFoundItems(cachedFound);
+        }
+      }
 
-        setStats(statsData);
-        setLostItems(lostData.slice(0, 4));
-        setFoundItems(foundData.slice(0, 4));
-        setErrorMessage(null);
-      } catch (error) {
-        if (controller.signal.aborted) return;
+      // Fetch each resource independently so sections render as soon as they arrive.
+      const statsReq = dashboardService
+        .getStats(controller.signal)
+        .then((data) => {
+          if (!controller.signal.aborted) {
+            setStats(data);
+            setErrorMessage(null);
+            writeClientCache(CACHE_KEYS.stats, data);
+          }
+        });
+
+      const lostReq = itemsService
+        .list({ status: "lost", sortOrder: "newest", limit: 4 }, controller.signal)
+        .then((data) => {
+          if (!controller.signal.aborted) {
+            setLostItems(data);
+            writeClientCache(CACHE_KEYS.lost, data);
+          }
+        });
+
+      const foundReq = itemsService
+        .list({ status: "found", sortOrder: "newest", limit: 4 }, controller.signal)
+        .then((data) => {
+          if (!controller.signal.aborted) {
+            setFoundItems(data);
+            writeClientCache(CACHE_KEYS.found, data);
+          }
+        });
+
+      const results = await Promise.allSettled([statsReq, lostReq, foundReq]);
+      if (controller.signal.aborted) return;
+
+      const allFailed = results.every((r) => r.status === "rejected");
+      if (allFailed) {
+        const firstErr = results[0].status === "rejected" ? results[0].reason : null;
         setErrorMessage(
-          error instanceof Error
-            ? error.message
+          firstErr instanceof Error
+            ? firstErr.message
             : "Unable to connect to the Findora API."
         );
-      } finally {
-        if (!controller.signal.aborted) {
-          setIsLoading(false);
-        }
+        if (!cachedLost) setLostItems([]);
+        if (!cachedFound) setFoundItems([]);
       }
     }
 
     void load();
     return () => controller.abort();
   }, [refreshTick]);
+
+  const isStatsLoading = stats === null && !errorMessage;
+  const isLostLoading = lostItems === null;
+  const isFoundLoading = foundItems === null;
 
   const overviewStats = [
     {
@@ -118,7 +154,6 @@ export function HomeLiveContent() {
 
   return (
     <>
-      {/* API Error Banner if Backend is Unreachable */}
       {errorMessage && (
         <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6 lg:px-8">
           <div
@@ -132,7 +167,7 @@ export function HomeLiveContent() {
             <button
               type="button"
               onClick={() => setRefreshTick((t) => t + 1)}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-semibold text-red-700 border border-red-200 hover:bg-red-100"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Retry
@@ -154,7 +189,7 @@ export function HomeLiveContent() {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  {isLoading ? (
+                  {isStatsLoading ? (
                     <div className="h-8 w-20 animate-pulse rounded-lg bg-[#E7EBE8]" />
                   ) : (
                     <p className="text-3xl font-bold tracking-tight text-[#142D3B]">
@@ -175,7 +210,7 @@ export function HomeLiveContent() {
       </section>
 
       {/* Recently Lost Items */}
-      {isLoading ? (
+      {isLostLoading ? (
         <section className="px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-8 h-10 w-64 animate-pulse rounded-xl bg-[#E7EBE8]" />
@@ -194,7 +229,7 @@ export function HomeLiveContent() {
       )}
 
       {/* Recently Found Items */}
-      {isLoading ? (
+      {isFoundLoading ? (
         <section className="px-4 py-14 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <div className="mb-8 h-10 w-64 animate-pulse rounded-xl bg-[#E7EBE8]" />
@@ -214,7 +249,7 @@ export function HomeLiveContent() {
 
       <HowItWorksSection />
 
-      {/* Campus Community Statistics (Live Backend Data) */}
+      {/* Campus Community Statistics */}
       <section
         id="community-stats"
         className="scroll-mt-24 px-4 py-16 sm:px-6 lg:px-8 lg:py-22"
@@ -261,7 +296,7 @@ export function HomeLiveContent() {
                     key={stat.label}
                     className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition-colors hover:border-[#C9FD04]/30 hover:bg-white/[0.07]"
                   >
-                    {isLoading ? (
+                    {isStatsLoading ? (
                       <div className="h-9 w-20 animate-pulse rounded-lg bg-white/10" />
                     ) : (
                       <p className="text-3xl font-bold tracking-tight text-[#C9FD04] sm:text-4xl">

@@ -300,6 +300,9 @@ function parseListFilters(query = {}) {
   const dateFrom = sanitizeText(query.dateFrom || "", 20);
   const dateTo = sanitizeText(query.dateTo || "", 20);
   const sort = sanitizeText(query.sort || "newest", 10).toLowerCase();
+  const rawLimit = Number(query.limit);
+  const limit =
+    Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : null;
 
   if (dateFrom && !isValidIsoDate(dateFrom)) {
     throw new AppError("Invalid dateFrom filter. Expected YYYY-MM-DD.", 400);
@@ -322,6 +325,7 @@ function parseListFilters(query = {}) {
     dateFrom,
     dateTo,
     sort: sort === "oldest" ? "oldest" : "newest",
+    limit,
   };
 }
 

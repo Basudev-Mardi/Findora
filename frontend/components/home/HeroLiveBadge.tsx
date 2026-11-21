@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, MapPin } from "lucide-react";
 import { dashboardService } from "@/services/dashboardService";
+import { readClientCache, writeClientCache } from "@/utils/clientCache";
 import type { DashboardStats, LatestReunitedItem } from "@/types/api";
+
+const STATS_CACHE_KEY = "findora_cache_dashboard_stats";
 
 function formatBadgeText(item: LatestReunitedItem): {
   heading: string;
@@ -46,14 +49,25 @@ export function HeroLiveBadge() {
 
   useEffect(() => {
     const controller = new AbortController();
-    dashboardService
-      .getStats(controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) setStats(data);
-      })
-      .catch(() => {
-        // Keep clean fallback if API is offline
-      });
+    const cached = readClientCache<DashboardStats>(STATS_CACHE_KEY);
+
+    async function load() {
+      if (cached) {
+        await Promise.resolve();
+        if (!controller.signal.aborted) setStats(cached);
+      }
+      try {
+        const data = await dashboardService.getStats(controller.signal);
+        if (!controller.signal.aborted) {
+          setStats(data);
+          writeClientCache(STATS_CACHE_KEY, data);
+        }
+      } catch {
+        // Keep cached/fallback display if API is temporarily unreachable
+      }
+    }
+
+    void load();
     return () => controller.abort();
   }, []);
 

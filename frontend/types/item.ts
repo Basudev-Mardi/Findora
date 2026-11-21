@@ -37,6 +37,7 @@ export interface ItemFilterParams {
   campusZone?: string;
   dateRange?: DateRangeFilter;
   sortOrder?: ItemSortOrder;
+  limit?: number;
 }
 
 export interface StatMetric {

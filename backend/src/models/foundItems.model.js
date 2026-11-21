@@ -75,7 +75,10 @@ function applyDemoFilters(items, filters) {
 const foundItemsModel = {
   async findAll(filters) {
     if (isDemoMode()) {
-      return applyDemoFilters(demoStore.foundItems, filters).map(toPublicFoundItem);
+      const list = applyDemoFilters(demoStore.foundItems, filters).map(
+        toPublicFoundItem
+      );
+      return filters.limit ? list.slice(0, filters.limit) : list;
     }
 
     const conditions = [];
@@ -113,6 +116,11 @@ const foundItemsModel = {
     const whereClause =
       conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
     const orderDirection = filters.sort === "oldest" ? "ASC" : "DESC";
+    let limitClause = "";
+    if (filters.limit) {
+      params.push(filters.limit);
+      limitClause = `LIMIT $${params.length}`;
+    }
 
     const sql = `
       SELECT id, user_id, title, category, campus_zone, location, date_found,
@@ -121,6 +129,7 @@ const foundItemsModel = {
       FROM found_items
       ${whereClause}
       ORDER BY date_found ${orderDirection}, created_at ${orderDirection}
+      ${limitClause}
     `;
 
     const result = await query(sql, params);
