@@ -14,7 +14,11 @@ export const metadata: Metadata = {
     "One Campus. One Community. Every Belonging Matters. Connect with your campus community to report lost items and reunite found belongings.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"

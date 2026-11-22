@@ -317,16 +317,18 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
               </div>
             )}
 
-            <div className="mt-6">
-              <ItemDetailActions
-                itemId={item.id}
-                itemTitle={item.title}
-                status={item.status}
-                isRecovered={item.lifecycleState === "recovered"}
-                initialOpen={initialAction === "claim"}
-                onClaimSuccess={() => setRefreshTick((t) => t + 1)}
-              />
-            </div>
+            {isFound && (
+              <div className="mt-6">
+                <ItemDetailActions
+                  itemId={item.id}
+                  itemTitle={item.title}
+                  status={item.status}
+                  isRecovered={item.lifecycleState === "recovered"}
+                  initialOpen={initialAction === "claim"}
+                  onClaimSuccess={() => setRefreshTick((t) => t + 1)}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

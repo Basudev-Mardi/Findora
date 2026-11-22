@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Loader2,
   Lock,
-  MessageSquare,
   ShieldCheck,
 } from "lucide-react";
 import { claimsService } from "@/services/claimsService";
@@ -108,6 +107,10 @@ export function ItemDetailActions({
     );
   }
 
+  if (!isFound) {
+    return null;
+  }
+
   if (createdClaim) {
     return (
       <div
@@ -159,23 +162,10 @@ export function ItemDetailActions({
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-bold transition-all duration-200 ${
-            isFound
-              ? "bg-[#1F6B50] text-white hover:bg-[#142D3B]"
-              : "bg-[#C9FD04] text-[#142D3B] hover:bg-[#d6ff38]"
-          }`}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1F6B50] px-6 py-3.5 text-sm font-bold text-white transition-all duration-200 hover:bg-[#142D3B]"
         >
-          {isFound ? (
-            <>
-              <ShieldCheck className="h-4 w-4" />
-              Request Claim
-            </>
-          ) : (
-            <>
-              <MessageSquare className="h-4 w-4" />
-              Report Match / Contact Owner
-            </>
-          )}
+          <ShieldCheck className="h-4 w-4" />
+          Request Claim
         </button>
       ) : (
         <form
@@ -184,7 +174,7 @@ export function ItemDetailActions({
         >
           <div className="flex items-center justify-between gap-2">
             <h3 className="text-sm font-bold text-[#142D3B]">
-              {isFound ? "Request Claim & Verify Ownership" : "Submit Match Verification"}
+              Request Claim & Verify Ownership
             </h3>
             <button
               type="button"
