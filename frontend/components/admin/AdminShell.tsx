@@ -48,13 +48,8 @@ function resolveActiveHref(pathname: string, fromParam: string | null) {
   return pathname;
 }
 
-function AdminSidebarNav({
-  pathname,
-  onNavigate,
-}: {
-  pathname: string;
-  onNavigate: () => void;
-}) {
+function AdminSidebarNav({ onNavigate }: { onNavigate: () => void }) {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeHref = resolveActiveHref(pathname, searchParams.get("from"));
 
@@ -86,7 +81,8 @@ function AdminSidebarNav({
   );
 }
 
-function AdminHeaderTitle({ pathname }: { pathname: string }) {
+function AdminHeaderTitle() {
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const isItemDetailRoute = pathname.startsWith("/admin/items/");
   const activeHref = resolveActiveHref(pathname, searchParams.get("from"));
@@ -114,7 +110,6 @@ function AdminHeaderTitle({ pathname }: { pathname: string }) {
 }
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const {
     isAuthorized,
     isCheckingSession,
@@ -242,9 +237,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const fallbackNav =
-    SIDEBAR_ITEMS.find((item) => item.href === pathname) ?? SIDEBAR_ITEMS[0];
-
   const sidebarContent = (
     <div className="flex h-full flex-col bg-[#142D3B] text-white">
       <div className="flex h-18 items-center justify-between border-b border-white/10 px-5">
@@ -279,35 +271,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <Suspense
         fallback={
           <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Admin Navigation">
-            {SIDEBAR_ITEMS.map(({ label, href, icon: Icon }) => {
-              const isActive = pathname === href;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-white/12 font-semibold text-white"
-                      : "text-white/70 hover:bg-white/6 hover:text-white"
-                  }`}
-                >
-                  <Icon
-                    className={`h-4 w-4 shrink-0 ${
-                      isActive ? "text-[#C9FD04]" : "text-white/55"
-                    }`}
-                  />
-                  {label}
-                </Link>
-              );
-            })}
+            {SIDEBAR_ITEMS.map(({ label, href, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-white/70 transition-colors hover:bg-white/6 hover:text-white"
+              >
+                <Icon className="h-4 w-4 shrink-0 text-white/55" />
+                {label}
+              </Link>
+            ))}
           </nav>
         }
       >
-        <AdminSidebarNav
-          pathname={pathname}
-          onNavigate={() => setMobileMenuOpen(false)}
-        />
+        <AdminSidebarNav onNavigate={() => setMobileMenuOpen(false)} />
       </Suspense>
 
       <div className="space-y-1.5 border-t border-white/10 p-3">
@@ -369,11 +347,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Suspense
                 fallback={
                   <h1 className="text-base font-bold text-[#142D3B] sm:text-lg">
-                    {fallbackNav.label}
+                    Admin Dashboard
                   </h1>
                 }
               >
-                <AdminHeaderTitle pathname={pathname} />
+                <AdminHeaderTitle />
               </Suspense>
             </div>
           </div>
