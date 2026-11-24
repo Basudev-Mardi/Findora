@@ -262,7 +262,7 @@ export function AdminClaimsDashboard() {
                   </div>
 
                   <Link
-                    href={`/items/${claim.itemId}`}
+                    href={`/admin/items/${claim.itemId}?from=claims`}
                     className="rounded-xl border border-[#E7EBE8] bg-[#F7F8F5] px-3.5 py-2 text-xs font-semibold text-[#142D3B] hover:bg-white"
                   >
                     View Listing &rarr;

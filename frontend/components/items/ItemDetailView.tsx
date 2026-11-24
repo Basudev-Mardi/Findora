@@ -27,9 +27,49 @@ import { StatusBadge } from "./StatusBadge";
 interface ItemDetailViewProps {
   id: string;
   initialAction?: string;
+  adminContext?: {
+    from?: string;
+  };
 }
 
-export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
+const ADMIN_ORIGIN_MAP: Record<
+  string,
+  { href: string; label: string; section: string }
+> = {
+  "lost-items": {
+    href: "/admin/lost-items",
+    label: "Back to Lost Items",
+    section: "Lost Items",
+  },
+  "found-items": {
+    href: "/admin/found-items",
+    label: "Back to Found Items",
+    section: "Found Items",
+  },
+  claims: {
+    href: "/admin/claims",
+    label: "Back to Claim Requests",
+    section: "Claim Requests",
+  },
+  recovered: {
+    href: "/admin/recovered",
+    label: "Back to Recovered Items",
+    section: "Recovered Items",
+  },
+};
+
+export function ItemDetailView({
+  id,
+  initialAction,
+  adminContext,
+}: ItemDetailViewProps) {
+  const isAdmin = Boolean(adminContext);
+  const originEntry = adminContext?.from
+    ? ADMIN_ORIGIN_MAP[adminContext.from]
+    : undefined;
+  const containerClass = isAdmin
+    ? "mx-auto max-w-7xl"
+    : "mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12";
   const [item, setItem] = useState<LostFoundItem | null>(null);
   const [itemClaims, setItemClaims] = useState<PublicClaimSummary[]>([]);
   const [potentialMatches, setPotentialMatches] = useState<PotentialMatch[]>([]);
@@ -100,7 +140,7 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+      <div className={containerClass}>
         <div className="h-9 w-40 animate-pulse rounded-xl bg-[#E7EBE8]" />
         <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="lg:col-span-7">
@@ -135,10 +175,10 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
               Retry
             </button>
             <Link
-              href="/lost"
+              href={isAdmin ? (originEntry?.href ?? "/admin") : "/lost"}
               className="inline-flex items-center gap-2 rounded-xl border border-[#E7EBE8] px-5 py-2.5 text-sm font-semibold text-[#142D3B] hover:bg-[#F7F8F5]"
             >
-              Back to Listings
+              {isAdmin ? (originEntry?.label ?? "Back to Admin") : "Back to Listings"}
             </Link>
           </div>
         </div>
@@ -157,13 +197,13 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
-              href="/lost"
+              href={isAdmin ? "/admin/lost-items" : "/lost"}
               className="rounded-xl bg-[#142D3B] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1F6B50]"
             >
               Browse Lost Items
             </Link>
             <Link
-              href="/found"
+              href={isAdmin ? "/admin/found-items" : "/found"}
               className="rounded-xl border border-[#E7EBE8] px-5 py-2.5 text-sm font-semibold text-[#142D3B] hover:bg-[#F7F8F5]"
             >
               Browse Found Items
@@ -175,11 +215,29 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
   }
 
   const isFound = item.status === "found";
-  const backHref = isFound ? "/found" : "/lost";
-  const backLabel = isFound ? "Back to Found Items" : "Back to Lost Items";
+  const defaultAdminHref = isFound ? "/admin/found-items" : "/admin/lost-items";
+  const defaultAdminLabel = isFound ? "Back to Found Items" : "Back to Lost Items";
+  const backHref = isAdmin
+    ? (originEntry?.href ?? defaultAdminHref)
+    : isFound
+      ? "/found"
+      : "/lost";
+  const backLabel = isAdmin
+    ? (originEntry?.label ?? defaultAdminLabel)
+    : isFound
+      ? "Back to Found Items"
+      : "Back to Lost Items";
+  const oppositeBrowseHref = isAdmin
+    ? isFound
+      ? "/admin/lost-items"
+      : "/admin/found-items"
+    : isFound
+      ? "/lost"
+      : "/found";
+  const sameBrowseHref = isAdmin ? defaultAdminHref : isFound ? "/found" : "/lost";
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
+    <div className={containerClass}>
       {/* Breadcrumb / Back Navigation */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
@@ -351,7 +409,7 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
               </p>
             </div>
             <Link
-              href={isFound ? "/lost" : "/found"}
+              href={oppositeBrowseHref}
               className="text-sm font-semibold text-[#1F6B50] hover:text-[#142D3B]"
             >
               Browse all {isFound ? "lost" : "found"} &rarr;
@@ -374,7 +432,15 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
                     </span>
                   ))}
                 </div>
-                <CatalogItemCard item={match.item} />
+                <CatalogItemCard
+                  item={match.item}
+                  detailBasePath={isAdmin ? "/admin/items" : undefined}
+                  detailQuery={
+                    isAdmin
+                      ? `from=${match.item.status === "found" ? "found-items" : "lost-items"}`
+                      : undefined
+                  }
+                />
               </div>
             ))}
           </div>
@@ -394,7 +460,7 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
               </h2>
             </div>
             <Link
-              href={backHref}
+              href={sameBrowseHref}
               className="text-sm font-semibold text-[#1F6B50] hover:text-[#142D3B]"
             >
               View all &rarr;
@@ -403,7 +469,16 @@ export function ItemDetailView({ id, initialAction }: ItemDetailViewProps) {
 
           <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {relatedItems.map((related) => (
-              <CatalogItemCard key={related.id} item={related} />
+              <CatalogItemCard
+                key={related.id}
+                item={related}
+                detailBasePath={isAdmin ? "/admin/items" : undefined}
+                detailQuery={
+                  isAdmin
+                    ? `from=${related.status === "found" ? "found-items" : "lost-items"}`
+                    : undefined
+                }
+              />
             ))}
           </div>
         </section>

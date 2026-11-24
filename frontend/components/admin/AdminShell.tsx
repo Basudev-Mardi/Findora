@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -33,6 +33,85 @@ const SIDEBAR_ITEMS = [
   { label: "Share QR", href: "/admin/qr", icon: QrCode },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ];
+
+const FROM_HREF_MAP: Record<string, string> = {
+  "lost-items": "/admin/lost-items",
+  "found-items": "/admin/found-items",
+  claims: "/admin/claims",
+  recovered: "/admin/recovered",
+};
+
+function resolveActiveHref(pathname: string, fromParam: string | null) {
+  if (pathname.startsWith("/admin/items/")) {
+    return (fromParam && FROM_HREF_MAP[fromParam]) || "/admin";
+  }
+  return pathname;
+}
+
+function AdminSidebarNav({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate: () => void;
+}) {
+  const searchParams = useSearchParams();
+  const activeHref = resolveActiveHref(pathname, searchParams.get("from"));
+
+  return (
+    <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Admin Navigation">
+      {SIDEBAR_ITEMS.map(({ label, href, icon: Icon }) => {
+        const isActive = activeHref === href;
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
+              isActive
+                ? "bg-white/12 font-semibold text-white"
+                : "text-white/70 hover:bg-white/6 hover:text-white"
+            }`}
+          >
+            <Icon
+              className={`h-4 w-4 shrink-0 ${
+                isActive ? "text-[#C9FD04]" : "text-white/55"
+              }`}
+            />
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function AdminHeaderTitle({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  const isItemDetailRoute = pathname.startsWith("/admin/items/");
+  const activeHref = resolveActiveHref(pathname, searchParams.get("from"));
+  const currentNav =
+    SIDEBAR_ITEMS.find((item) => item.href === activeHref) ?? SIDEBAR_ITEMS[0];
+
+  return (
+    <h1 className="flex items-center gap-2 text-base font-bold text-[#142D3B] sm:text-lg">
+      {isItemDetailRoute ? (
+        <>
+          <Link
+            href={currentNav.href}
+            className="text-[#7B858B] transition-colors hover:text-[#142D3B]"
+          >
+            {currentNav.label}
+          </Link>
+          <span className="text-[#7B858B]/60">/</span>
+          <span>Item Details</span>
+        </>
+      ) : (
+        currentNav.label
+      )}
+    </h1>
+  );
+}
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -163,7 +242,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const currentNav =
+  const fallbackNav =
     SIDEBAR_ITEMS.find((item) => item.href === pathname) ?? SIDEBAR_ITEMS[0];
 
   const sidebarContent = (
@@ -197,30 +276,39 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Admin Navigation">
-        {SIDEBAR_ITEMS.map(({ label, href, icon: Icon }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? "bg-white/12 font-semibold text-white"
-                  : "text-white/70 hover:bg-white/6 hover:text-white"
-              }`}
-            >
-              <Icon
-                className={`h-4 w-4 shrink-0 ${
-                  isActive ? "text-[#C9FD04]" : "text-white/55"
-                }`}
-              />
-              {label}
-            </Link>
-          );
-        })}
-      </nav>
+      <Suspense
+        fallback={
+          <nav className="flex-1 space-y-1 px-3 py-5" aria-label="Admin Navigation">
+            {SIDEBAR_ITEMS.map(({ label, href, icon: Icon }) => {
+              const isActive = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-white/12 font-semibold text-white"
+                      : "text-white/70 hover:bg-white/6 hover:text-white"
+                  }`}
+                >
+                  <Icon
+                    className={`h-4 w-4 shrink-0 ${
+                      isActive ? "text-[#C9FD04]" : "text-white/55"
+                    }`}
+                  />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+        }
+      >
+        <AdminSidebarNav
+          pathname={pathname}
+          onNavigate={() => setMobileMenuOpen(false)}
+        />
+      </Suspense>
 
       <div className="space-y-1.5 border-t border-white/10 p-3">
         <Link
@@ -278,9 +366,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#1F6B50]">
                 Findora Administration
               </p>
-              <h1 className="text-base font-bold text-[#142D3B] sm:text-lg">
-                {currentNav.label}
-              </h1>
+              <Suspense
+                fallback={
+                  <h1 className="text-base font-bold text-[#142D3B] sm:text-lg">
+                    {fallbackNav.label}
+                  </h1>
+                }
+              >
+                <AdminHeaderTitle pathname={pathname} />
+              </Suspense>
             </div>
           </div>
 

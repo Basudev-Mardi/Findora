@@ -122,7 +122,7 @@ export function AdminRecoveredView() {
                 </p>
               </div>
               <Link
-                href={`/items/${item.id}`}
+                href={`/admin/items/${item.id}?from=recovered`}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#E7EBE8] bg-[#F7F8F5] px-3 py-2 text-xs font-semibold text-[#142D3B] hover:bg-white"
               >
                 View

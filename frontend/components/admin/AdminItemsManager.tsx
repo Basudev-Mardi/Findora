@@ -312,8 +312,8 @@ export function AdminItemsManager({
                           </select>
 
                           <Link
-                            href={`/items/${item.id}`}
-                            title="View public listing"
+                            href={`/admin/items/${item.id}?from=${type === "lost" ? "lost-items" : "found-items"}`}
+                            title="View item details"
                             className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[#E7EBE8] bg-white text-[#7B858B] hover:text-[#142D3B]"
                           >
                             <ExternalLink className="h-3.5 w-3.5" />

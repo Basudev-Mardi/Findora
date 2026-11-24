@@ -6,12 +6,23 @@ import { StatusBadge } from "./StatusBadge";
 
 interface CatalogItemCardProps {
   item: LostFoundItem;
+  detailBasePath?: string;
+  detailQuery?: string;
 }
 
-export function CatalogItemCard({ item }: CatalogItemCardProps) {
+export function CatalogItemCard({
+  item,
+  detailBasePath = "/items",
+  detailQuery,
+}: CatalogItemCardProps) {
   const isFound = item.status === "found";
   const isRecovered = item.lifecycleState === "recovered";
-  const detailHref = `/items/${item.id}`;
+  const baseHref = `${detailBasePath}/${item.id}`;
+  const detailHref = detailQuery ? `${baseHref}?${detailQuery}` : baseHref;
+  const claimParams = new URLSearchParams(detailQuery ?? "");
+  claimParams.set("action", "claim");
+  const actionHref =
+    isFound && !isRecovered ? `${baseHref}?${claimParams.toString()}` : detailHref;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-[#E7EBE8] bg-white shadow-[0_1px_2px_rgba(20,45,59,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-[#142D3B]/20 hover:shadow-[0_16px_32px_rgba(20,45,59,0.08)]">
@@ -79,9 +90,7 @@ export function CatalogItemCard({ item }: CatalogItemCardProps) {
 
         <div className="mt-5 pt-1">
           <Link
-            href={
-              isFound && !isRecovered ? `${detailHref}?action=claim` : detailHref
-            }
+            href={actionHref}
             className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-200 ${
               isFound && !isRecovered
                 ? "bg-[#1F6B50] text-white hover:bg-[#142D3B]"
