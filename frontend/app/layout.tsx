@@ -1,5 +1,8 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { StudentAuthProvider } from "@/components/auth/StudentAuthContext";
+import { StudentRouteGuard } from "@/components/auth/StudentRouteGuard";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
@@ -25,7 +28,11 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#F7F8F5] text-[#202B32] selection:bg-[#C9FD04] selection:text-[#142D3B]">
-        {children}
+        <StudentAuthProvider>
+          <Suspense fallback={<div className="min-h-screen bg-[#F7F8F5]" />}>
+            <StudentRouteGuard>{children}</StudentRouteGuard>
+          </Suspense>
+        </StudentAuthProvider>
       </body>
     </html>
   );

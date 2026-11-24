@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, Menu, UserCircle2, X } from "lucide-react";
+import { useStudentAuth } from "@/components/auth/StudentAuthContext";
 import { Logo } from "./Logo";
 
 const NAV_LINKS = [
@@ -15,6 +17,14 @@ const NAV_LINKS = [
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter();
+  const { student, isAuthenticated, logout } = useStudentAuth();
+
+  function handleLogout() {
+    logout();
+    setMobileOpen(false);
+    router.replace("/login");
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#E7EBE8] bg-[#F7F8F5]/85 backdrop-blur-md">
@@ -34,18 +44,40 @@ export function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link
-            href="/login"
-            className="rounded-lg px-4 py-2 text-sm font-semibold text-[#142D3B] transition-colors hover:bg-[#142D3B]/5"
-          >
-            Login
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-xl bg-[#142D3B] px-4.5 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#1F6B50]"
-          >
-            Get Started
-          </Link>
+          {isAuthenticated && student ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#E7EBE8] bg-white px-3.5 py-2 text-xs font-semibold text-[#142D3B] transition-colors hover:bg-[#F7F8F5]"
+              >
+                <UserCircle2 className="h-4 w-4 text-[#1F6B50]" />
+                {student.name}
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-lg px-4 py-2 text-sm font-semibold text-[#142D3B] transition-colors hover:bg-[#142D3B]/5"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl bg-[#142D3B] px-4.5 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-[#1F6B50]"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -74,20 +106,39 @@ export function Navbar() {
             ))}
           </nav>
           <div className="mt-4 flex flex-col gap-2.5 border-t border-[#E7EBE8] pt-4">
-            <Link
-              href="/login"
-              onClick={() => setMobileOpen(false)}
-              className="w-full rounded-xl border border-[#E7EBE8] px-4 py-2.5 text-center text-sm font-semibold text-[#142D3B] transition-colors hover:bg-[#F7F8F5]"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => setMobileOpen(false)}
-              className="w-full rounded-xl bg-[#142D3B] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#1F6B50]"
-            >
-              Get Started
-            </Link>
+            {isAuthenticated && student ? (
+              <>
+                <div className="flex items-center gap-2 rounded-xl border border-[#E7EBE8] bg-[#F7F8F5] px-3.5 py-2.5 text-xs font-semibold text-[#142D3B]">
+                  <UserCircle2 className="h-4 w-4 text-[#1F6B50]" />
+                  <span>{student.name}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full rounded-xl border border-[#E7EBE8] px-4 py-2.5 text-center text-sm font-semibold text-[#142D3B] transition-colors hover:bg-[#F7F8F5]"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="w-full rounded-xl bg-[#142D3B] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#1F6B50]"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}
